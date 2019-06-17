@@ -16,6 +16,7 @@ Parameters:
 Resources:
   rS3Bucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
     Properties:
       BucketName: !Sub "${pOrg}-${pBaseBucketName}-${AWS::AccountId}-${AWS::Region}"
       PublicAccessBlockConfiguration:
