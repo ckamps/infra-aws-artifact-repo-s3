@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: S3 Bucket for AWS foundation management artifacts
+
+Parameters:
+  pOrg:
+    Type: String
+    Description: Organization qualifier
+    Default: acme
+
+  pBaseBucketName:
+    Type: String
+    Description: Bucket name
+    Default: infra-artifacts
+
+Resources:
+  rS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${pOrg}-${pBaseBucketName}-${AWS::AccountId}-${AWS::Region}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+
+  rS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: rS3Bucket
+      PolicyDocument:
+        Statement:
+          -
+            Sid: "AllowCrossAccountGetByAdmins"
+            Effect: Allow
+            Principal:
+              AWS:
+              {%- for account_alias, account in accounts.items() %}
+              {%- if account['standard-account'] %}
+                - arn:aws:iam::{{account['id']}}:root
+              {%- endif %}
+              {%- endfor %}
+            Action:
+              - s3:GetObject
+            Resource: !Sub arn:aws:s3:::${rS3Bucket}/*
+
+Outputs:
+  oBucketArn:
+    Description: Bucket ARN
+    Value: !Ref rS3Bucket

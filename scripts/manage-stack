@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+
+#set -x
+
+PARAMS=""
+while (( "$#" )); do
+  case "$1" in
+    -u|--update)
+      UPDATE=1
+      shift 1
+      ;;
+    -s|--stack-name)
+      STACK_NAME_ARG=$2
+      shift 2
+      ;;
+    -t|--template)
+      TEMPLATE_ARG=$2
+      shift 2
+      ;;
+    -p|--profile)
+      PROFILE_ARG=$2
+      shift 2
+      ;;
+    -r|--region)
+      REGION_ARG=$2
+      shift 2
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*|--*=)
+      echo "Error: Unsupported flag $1" >&2
+      exit 1
+      ;;
+    *)
+      PARAMS="$PARAMS $1"
+      shift
+      ;;
+  esac
+done
+
+eval set -- "$PARAMS"
+
+if [ -z $UPDATE ]; then
+  CMD='create-stack --enable-termination-protection'
+else
+  CMD='update-stack'
+fi
+
+if [ -z ${STACK_NAME_ARG+x} ]; then
+  STACK_NAME=infra-artifacts-repo-s3
+else
+  STACK_NAME=$STACK_NAME_ARG
+fi
+
+if [ -z ${TEMPLATE_ARG+x} ]; then
+  TEMPLATE=infra-artifacts-repo-s3.yml
+else
+  TEMPLATE=$TEMPLATE_ARG
+fi
+
+if [ -z ${PROFILE_ARG+x} ]; then
+  PROFILE=admin
+else
+  PROFILE=$PROFILE_ARG
+fi
+
+if [ -z ${REGION_ARG+x} ]; then
+  REGION=us-east-1
+else
+  REGION=$PROFILE_ARG
+fi
+
+aws cloudformation ${CMD} \
+                     --stack-name ${STACK_NAME} \
+                     --template-body file://../target/${TEMPLATE} \
+                     --capabilities CAPABILITY_NAMED_IAM \
+                     --region ${REGION} \
+                     --profile ${PROFILE}
+
+#aws cloudformation wait stack-create-complete --stack-name ${STACK_NAME} --region ${AWS_REGION} --profile ${AWS_PROFILE}
