@@ -60,6 +60,12 @@ else
   CMD='update-stack'
 fi
 
+if [ -z ${ORG_ARG+x} ]; then
+  ORG=acme
+else
+  ORG=$ORG_ARG
+fi
+
 if [ -z ${STACK_NAME_ARG+x} ]; then
   STACK_NAME=infra-artifacts-repo-s3
 else
